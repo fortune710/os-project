@@ -1,7 +1,6 @@
 ﻿# Subsystem Interface Specification (MOSS)
 
-This specification defines the public APIs, shared data structures, and constraints that
-all subsystems must follow to enable integration.
+This specification defines the public APIs, shared data structures, and constraints that\nall subsystems must follow to enable integration. The interfaces are **C-compatible** and can be\nimplemented in either C or C++.
 
 ## API Principles & Conventions
 - APIs are **stable, minimal, and documented**.
@@ -123,3 +122,4 @@ moss_status_t sync_run_scenario(const char *scenario_name);
 - Shared data structures are defined in public headers under `include/`.
 - All state changes occur **only via API calls**.
 - The main system orchestrates calls and handles logging/output.
+

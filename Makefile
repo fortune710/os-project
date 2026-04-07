@@ -1,22 +1,30 @@
 ﻿CC ?= gcc
+CXX ?= g++
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Iinclude
+CXXFLAGS ?= -std=c++17 -Wall -Wextra -Wpedantic -Iinclude
 LDFLAGS ?=
 
-SRC := \
-  src/main.c \
-  src/sched/sched.c \
-  src/mem/mem.c \
-  src/sync/sync.c
+SRC_C :=
+SRC_CPP := \
+  src/main.cpp \
+  src/sched/sched.cpp \
+  src/mem/mem.cpp \
+  src/sync/sync.cpp
 
-OBJ := $(SRC:.c=.o)
+OBJ_C := $(SRC_C:.c=.o)
+OBJ_CPP := $(SRC_CPP:.cpp=.o)
+OBJ := $(OBJ_C) $(OBJ_CPP)
 
 all: moss
 
 moss: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJ) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJ) moss

@@ -1,6 +1,6 @@
 ﻿# Public API Guide (Beginner-Friendly)
 
-This document explains the public APIs and error codes used by MOSS in plain language.
+This document explains the public APIs and error codes used by MOSS in plain language.\nAll public headers are C-compatible and can be used from C or C++.
 
 ## How to Read the API
 - Every public function returns a **status code** (`moss_status_t`).
@@ -74,3 +74,4 @@ if (rc != MOSS_OK) {
 ## Where the APIs Live
 - Headers: `include/sched.h`, `include/mem.h`, `include/sync.h`
 - Spec: `docs/api.md`
+

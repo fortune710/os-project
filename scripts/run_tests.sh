@@ -9,9 +9,9 @@ make
 ./moss
 
 # Build and run basic tests (if desired)
-if [ -f tests/basic_tests.c ]; then
-  gcc -std=c11 -Wall -Wextra -Wpedantic -Iinclude \
-    tests/basic_tests.c src/sched/sched.c src/mem/mem.c src/sync/sync.c \
+if [ -f tests/basic_tests.cpp ]; then
+  g++ -std=c++17 -Wall -Wextra -Wpedantic -Iinclude \
+    tests/basic_tests.cpp src/sched/sched.cpp src/mem/mem.cpp src/sync/sync.cpp \
     -o tests/basic_tests
   ./tests/basic_tests
 fi
