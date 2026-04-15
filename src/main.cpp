@@ -1,6 +1,6 @@
 ﻿#include <stdio.h>
 
-#include "sched.h"
+#include "scheduler.h"
 #include "mem.h"
 #include "sync.h"
 

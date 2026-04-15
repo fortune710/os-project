@@ -1,77 +1,54 @@
-﻿# Public API Guide (Beginner-Friendly)
+# Public API Guide (Beginner-Friendly)
 
-This document explains the public APIs and error codes used by MOSS in plain language.\nAll public headers are C-compatible and can be used from C or C++.
-
-## How to Read the API
-- Every public function returns a **status code** (`moss_status_t`).
-- **`0` means success**.
-- Any **negative value means failure**.
-- Functions never print output directly; the caller decides what to log or display.
+This document explains the public APIs and error codes used by MOSS in plain language.
 
 ## Standard Error Codes
-These codes are shared by all subsystems:
-
 ```c
-MOSS_OK        =  0   // success
-MOSS_EINVAL    = -1   // invalid argument (bad pointer, out-of-range value)
-MOSS_ENOMEM    = -2   // not enough memory or frames
-MOSS_ENOTREADY = -3   // subsystem not initialized or not configured
-MOSS_ESTATE    = -4   // invalid internal state (e.g., empty queue when scheduling)
-MOSS_EPERM     = -5   // permission denied (protection checks failed)
+MOSS_OK        =  0
+MOSS_EINVAL    = -1
+MOSS_ENOMEM    = -2
+MOSS_ENOTREADY = -3
+MOSS_ESTATE    = -4
+MOSS_EPERM     = -5
 ```
 
-## Where These Types Live
-- Common types and error codes are defined in `include/moss.h`.
-- Subsystem headers include `moss.h` so everything stays consistent.
+## Scheduler (`scheduler_`)
+Purpose: simulate process lifecycle and CPU selection.
 
-## Scheduler (sched_)
-**Purpose:** decide which process runs next and track timing statistics.
+### Lifecycle States
+- `PROCESS_LIFECYCLE_NEW`
+- `PROCESS_LIFECYCLE_READY`
+- `PROCESS_LIFECYCLE_RUNNING`
+- `PROCESS_LIFECYCLE_WAITING`
+- `PROCESS_LIFECYCLE_TERMINATED`
 
-Key functions:
-- `sched_init(policy, quantum)`
-  - Sets scheduling policy (FCFS/RR/etc.).
-  - Returns `MOSS_ENOTREADY` if needed state is missing.
-- `sched_create_process(proc)`
-  - Adds a process to the ready queue.
-- `sched_schedule(&pid)`
-  - Picks the next PID to run.
-  - Returns `MOSS_ESTATE` if no process is ready.
-- `sched_get_stats(&stats)`
-  - Returns waiting/turnaround totals.
+The lifecycle enum and process control block definition are declared in `include/scheduler.h`.
 
-## Memory (mem_)
-**Purpose:** translate logical addresses, simulate paging, track page faults.
+### Algorithms
+- `SCHEDULER_ALGORITHM_FCFS`
+- `SCHEDULER_ALGORITHM_ROUND_ROBIN`
+- `SCHEDULER_ALGORITHM_PRIORITY`
+- `SCHEDULER_ALGORITHM_MLFQ`
 
-Key functions:
-- `mem_init(cfg)` / `mem_configure(cfg)`
-  - Sets page size, number of frames, and replacement policy.
-- `mem_access(access, &phys_addr, &page_fault)`
-  - Converts a logical address to a physical address.
-  - Sets `page_fault` to 1 if a fault occurred.
-- `mem_page_faults()`
-  - Returns total page faults so far.
+### Public Functions
+- `scheduler_init(scheduling_algorithm, algorithm_time_quantum)`
+- `scheduler_create_process(scheduler_process_definition)`
+- `scheduler_schedule(scheduled_process_identifier)`
+- `scheduler_tick(time_delta)`
+- `scheduler_terminate_process(process_identifier)`
+- `scheduler_get_statistics(output_statistics)`
+- `scheduler_set_algorithm(scheduling_algorithm, algorithm_time_quantum)`
 
-## Synchronization & Protection (sync_)
-**Purpose:** simulate locks/semaphores and basic access control.
+### Ownership Rule
+Scheduler owns ready queue state and all process control block lifecycle transitions.
 
-Key functions:
-- `sync_mutex_*` / `sync_sem_*`
-  - Create and operate on locks and semaphores.
-- `sync_check_access(access)`
-  - Enforces role-based permissions.
-  - Returns `MOSS_EPERM` if access is denied.
-- `sync_run_scenario(name)`
-  - Runs a predefined synchronization demo (e.g., producer–consumer).
+## Memory (`mem_`)
+Purpose: logical-to-physical translation and page-fault simulation.
 
-## Example: Handling Errors
-```c
-moss_status_t rc = mem_access(&req, &phys, &fault);
-if (rc != MOSS_OK) {
-    // handle error in main system
-}
-```
+## Synchronization and Protection (`sync_`)
+Purpose: mutex/semaphore simulation and access checks.
 
-## Where the APIs Live
-- Headers: `include/sched.h`, `include/mem.h`, `include/sync.h`
-- Spec: `docs/api.md`
-
+## Header Locations
+- `include/scheduler.h`
+- `include/mem.h`
+- `include/sync.h`

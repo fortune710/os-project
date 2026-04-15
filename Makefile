@@ -7,7 +7,7 @@ LDFLAGS ?=
 SRC_C :=
 SRC_CPP := \
   src/main.cpp \
-  src/sched/sched.cpp \
+  src/scheduler/scheduler.cpp \
   src/mem/mem.cpp \
   src/sync/sync.cpp
 
