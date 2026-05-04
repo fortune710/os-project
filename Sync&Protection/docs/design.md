@@ -1,124 +1,87 @@
-# MOSS Subsystem C Design (Synchronization and Protection)
+# Subsystem C: Synchronization & Protection — Design Document
 
-## 1. Architectural Overview
+## Overview
 
-This module implements Subsystem C for the MOSS simulator. It provides:
+This subsystem implements synchronization primitives and protection mechanisms for the
+MOSS simulator. It provides mutex locks with wait queues, counting semaphores, a
+Producer-Consumer simulation, role-based access control, and deadlock detection via
+wait-for graph cycle detection.
 
-- Synchronization primitives: mutexes and counting semaphores.
-- A classical synchronization scenario: Producer-Consumer.
-- A basic protection model: role assignment and permission checks.
+## Design Decisions
 
-The subsystem exposes a clean API in `include/sync.h` and keeps implementation details in `src/sync/sync.c`.
+### Mutex Implementation
 
-## 2. Public API Reference
+Mutexes are implemented as named objects with an owner PID and a FIFO wait queue. When a
+process locks a mutex that is already held, it is added to the queue and the call returns
+`MOSS_ERR_BUSY`. When the owner unlocks, the lock is handed directly to the next waiter
+rather than being released to the pool — this prevents starvation and ensures fairness.
 
-### Mutex API
+Re-entrant locking (a process trying to lock a mutex it already holds) is detected and
+returns an error rather than deadlocking the process.
 
-- `int sync_mutex_init(int mutex_id);`
-- `int sync_mutex_lock(int mutex_id);`
-- `int sync_mutex_unlock(int mutex_id);`
+### Semaphore Implementation
 
-### Semaphore API
+Semaphores maintain an integer value and a wait queue. The Wait (P) operation decrements
+the value if positive, otherwise blocks the caller. The Signal (V) operation wakes a
+blocked process if any are waiting, otherwise increments the value. This correctly
+implements counting semaphore semantics.
 
-- `int sync_sem_init(int sem_id, int initial_value);`
-- `int sync_sem_wait(int sem_id);`
-- `int sync_sem_post(int sem_id);`
+### Producer-Consumer
 
-### Protection API
+The bounded-buffer problem is solved using two counting semaphores (`empty` and `full`)
+and a mutex (`buffer_lock`). The simulation runs in a single thread, alternating between
+producer and consumer steps, and printing a detailed trace of every synchronization
+operation. This makes the protocol visible without requiring actual threading.
 
-- `int sync_set_process_role(int process_id, int role_id);`
-- `int sync_check_permission(int process_id, int resource_id);`
+### Access Control
 
-### Producer-Consumer API
+I implemented a static access control matrix with two roles (ADMIN, USER) and four
+action types (read, write, execute, admin) across three resources (memory, process,
+sync_resource). The matrix is defined as a constant array of rules, and permission
+checks iterate through the rules to find a match. Unknown combinations are denied by
+default, following the principle of least privilege.
 
-- `int sync_pc_init(void);`
-- `int sync_pc_reset(void);`
-- `int sync_produce(int item);`
-- `int sync_consume(int *item);`
+The access control system depends on the scheduler subsystem to look up process roles
+from the PCB via `sched_get_process()`. This is the primary cross-subsystem dependency.
 
-All APIs return `0` on success and negative values on failure.
+### Deadlock Detection
 
-## 3. Implementation Decisions
+Deadlock detection constructs a wait-for graph from the current mutex state: for each
+mutex, if process A holds it and process B is waiting, an edge B → A is added. Floyd's
+tortoise-and-hare algorithm then checks for cycles. If a cycle is found, the deadlocked
+processes are reported.
 
-- Internal module state is file-local (`static`) in `sync.c`.
-- Resource pools are bounded by fixed constants (`MAX_MUTEXES`, `MAX_SEMAPHORES`, `MAX_PROCESSES`).
-- Producer-Consumer uses:
-  - One mutex to protect shared buffer indices.
-  - `empty` semaphore initialized to buffer size.
-  - `full` semaphore initialized to zero.
-- `sync_pc_reset()` is provided to support repeated benchmark runs with consistent initial state.
-- `main.c` supports two modes:
-  - `demo`: human-readable threaded demonstration.
-  - `bench`: CSV-style benchmark output for quantitative analysis.
+I chose detection over prevention because it allows demonstrating actual deadlock
+scenarios, which is more educational than preventing them.
 
-## 4. Quantitative Evaluation Plan and Results
+## Assumptions
 
-Run benchmark:
+- Maximum 16 mutexes and 16 semaphores.
+- Wait queues hold up to 32 processes.
+- Access control matrix is compiled into the binary (not configurable at runtime).
+- All concurrency is logically simulated — no real threads.
 
-```bash
-make
-./moss_sim bench
-```
+## Limitations
 
-Output format:
+- No deadlock recovery (only detection).
+- No condition variables.
+- No readers-writers lock.
+- Access control matrix cannot be modified at runtime (only roles can change).
+- Producer-Consumer simulation is deterministic (producer always goes first).
 
-```text
-iterations,total_ms,avg_op_us,producer_failures,consumer_failures
-```
+## API Summary
 
-Recommended workloads:
-
-- 1,000 iterations
-- 10,000 iterations
-- 100,000 iterations
-
-### Measured Results (macOS dev machine)
-
-Fill this table with your observed output:
-
-| Iterations | Total ms | Avg us/op | Producer failures | Consumer failures |
-| --- | ---: | ---: | ---: | ---: |
-| 1,000 | 1.625 | 0.812 | 0 | 0 |
-| 10,000 | 17.198 | 0.860 | 0 | 0 |
-| 100,000 | 141.906 | 0.710 | 0 | 0 |
-
-### Analysis Notes (COSC 514)
-
-When writing the final report, discuss:
-
-- How total runtime scales as workload increases.
-- Whether average per-operation cost remains stable.
-- Sources of overhead: lock contention, context switching, semaphore operations.
-- Differences between macOS and Ubuntu measurements (if any).
-
-## 5. Build and Execution
-
-Build:
-
-```bash
-make
-```
-
-Run demo:
-
-```bash
-./moss_sim demo
-```
-
-Run benchmark:
-
-```bash
-./moss_sim bench
-```
-
-Clean:
-
-```bash
-make clean
-```
-
-## 6. Current Limitations
-
-- Protection model is intentionally minimal (role threshold check by resource parity).
-- No teardown APIs for full resource lifecycle across all pool objects.
-- This is a single subsystem and does not yet include process scheduling or virtual memory integration.
+| Function | Purpose |
+|----------|---------|
+| `sync_init()` | Initialize the sync subsystem |
+| `sync_mutex_create()` | Create a named mutex |
+| `sync_mutex_lock()` | Lock a mutex |
+| `sync_mutex_unlock()` | Unlock a mutex |
+| `sync_sem_create()` | Create a semaphore |
+| `sync_sem_wait()` | Semaphore wait (P) |
+| `sync_sem_signal()` | Semaphore signal (V) |
+| `sync_run_producer_consumer()` | Run bounded-buffer simulation |
+| `sync_check_permission()` | Check access control |
+| `sync_set_role()` | Change a process's role |
+| `sync_detect_deadlock()` | Detect deadlock via wait-for graph |
+| `sync_cleanup()` | Free all resources |
