@@ -39,6 +39,16 @@ The lifecycle enum and process control block definition are declared in `include
 - `scheduler_get_statistics(output_statistics)`
 - `scheduler_set_algorithm(scheduling_algorithm, algorithm_time_quantum)`
 
+### Algorithm Runner Functions
+- `scheduler_run_fcfs(...)`
+- `scheduler_run_round_robin(..., algorithm_time_quantum, ...)`
+- `scheduler_run_mlfq(...)`
+
+These are declared in `include/scheduler_algorithms.h` and return:
+- Gantt segments (`scheduler_gantt_segment`)
+- Per-process metrics (`scheduler_process_metrics`)
+- Algorithm averages (`scheduler_algorithm_summary`)
+
 ### Ownership Rule
 Scheduler owns ready queue state and all process control block lifecycle transitions.
 
@@ -50,5 +60,6 @@ Purpose: mutex/semaphore simulation and access checks.
 
 ## Header Locations
 - `include/scheduler.h`
+- `include/scheduler_algorithms.h`
 - `include/mem.h`
 - `include/sync.h`

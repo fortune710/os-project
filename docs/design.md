@@ -4,6 +4,8 @@
 
 The scheduler subsystem stores process control blocks in a map keyed by process identifier, tracks a ready queue, tracks one running process identifier, and accumulates global scheduler statistics.
 
+Algorithm execution and metric calculations are isolated in `src/scheduler/algorithms.cpp`, while lifecycle/state APIs remain in `src/scheduler/scheduler.cpp`.
+
 ## Process Control Block Model
 
 The following definitions now live in `include/scheduler.h`:
@@ -30,3 +32,10 @@ After a process reaches terminated state, scheduler statistics are aggregated an
 ## Naming Direction
 
 Scheduler APIs use the full `scheduler_` prefix and use `algorithm` terminology instead of `policy`.
+
+## Algorithm Reporting Model
+
+Scheduling runs provide:
+- Gantt chart segments (`scheduler_gantt_segment`)
+- Per-process waiting/turnaround/completion metrics (`scheduler_process_metrics`)
+- Average waiting and turnaround values (`scheduler_algorithm_summary`)

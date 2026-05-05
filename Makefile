@@ -8,6 +8,7 @@ SRC_C :=
 SRC_CPP := \
   src/main.cpp \
   src/scheduler/scheduler.cpp \
+  src/scheduler/algorithms.cpp \
   src/mem/mem.cpp \
   src/sync/sync.cpp
 

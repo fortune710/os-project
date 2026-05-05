@@ -25,6 +25,18 @@ moss_status_t scheduler_get_statistics(scheduler_statistics *output_statistics);
 moss_status_t scheduler_set_algorithm(scheduler_algorithm scheduling_algorithm, moss_time_t algorithm_time_quantum);
 ```
 
+### Algorithm Execution API
+```c
+moss_status_t scheduler_run_fcfs(...);
+moss_status_t scheduler_run_round_robin(..., moss_time_t algorithm_time_quantum, ...);
+moss_status_t scheduler_run_mlfq(...);
+```
+
+Algorithm execution outputs:
+- `scheduler_gantt_segment`
+- `scheduler_process_metrics`
+- `scheduler_algorithm_summary`
+
 ### Lifecycle Model
 - `PROCESS_LIFECYCLE_NEW`
 - `PROCESS_LIFECYCLE_READY`
@@ -47,6 +59,7 @@ Milestone transitions:
 ### Ownership Rules
 - Scheduler owns process control block storage and lifecycle transitions.
 - External modules must not mutate scheduler internals directly.
+- Scheduling algorithm logic and metric computation are implemented in `src/scheduler/algorithms.cpp`.
 
 ## Subsystem B – Memory Management (`mem_`)
 ### Public API

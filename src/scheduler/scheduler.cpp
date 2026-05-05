@@ -4,6 +4,8 @@
 #include <deque>
 #include <unordered_map>
 
+#include "algorithms_internal.hpp"
+
 static bool scheduler_is_initialized = false;
 static scheduler_algorithm active_scheduling_algorithm = SCHEDULER_ALGORITHM_FCFS;
 static moss_time_t configured_algorithm_time_quantum = 0;
@@ -227,4 +229,56 @@ moss_status_t scheduler_set_algorithm(scheduler_algorithm scheduling_algorithm, 
     active_scheduling_algorithm = scheduling_algorithm;
     configured_algorithm_time_quantum = algorithm_time_quantum;
     return MOSS_OK;
+}
+
+/* Run FCFS algorithm through the dedicated algorithms module using the scheduler-owned ready queue pointer. */
+moss_status_t scheduler_run_fcfs(
+    const scheduler_process *scheduler_process_definitions,
+    size_t scheduler_process_count,
+    scheduler_gantt_segment *output_gantt_segments,
+    size_t output_gantt_segments_capacity,
+    size_t *output_gantt_segment_count,
+    scheduler_process_metrics *output_process_metrics,
+    size_t output_process_metrics_capacity,
+    size_t *output_process_metrics_count,
+    scheduler_algorithm_summary *output_algorithm_summary) {
+    return scheduler_run_fcfs_with_ready_queue_pointer(
+        scheduler_process_definitions, scheduler_process_count, &ready_queue_process_identifiers, output_gantt_segments,
+        output_gantt_segments_capacity, output_gantt_segment_count, output_process_metrics, output_process_metrics_capacity,
+        output_process_metrics_count, output_algorithm_summary);
+}
+
+/* Run Round Robin algorithm through the dedicated algorithms module using caller-supplied time quantum. */
+moss_status_t scheduler_run_round_robin(
+    const scheduler_process *scheduler_process_definitions,
+    size_t scheduler_process_count,
+    moss_time_t algorithm_time_quantum,
+    scheduler_gantt_segment *output_gantt_segments,
+    size_t output_gantt_segments_capacity,
+    size_t *output_gantt_segment_count,
+    scheduler_process_metrics *output_process_metrics,
+    size_t output_process_metrics_capacity,
+    size_t *output_process_metrics_count,
+    scheduler_algorithm_summary *output_algorithm_summary) {
+    return scheduler_run_round_robin_with_ready_queue_pointer(
+        scheduler_process_definitions, scheduler_process_count, algorithm_time_quantum, &ready_queue_process_identifiers,
+        output_gantt_segments, output_gantt_segments_capacity, output_gantt_segment_count, output_process_metrics,
+        output_process_metrics_capacity, output_process_metrics_count, output_algorithm_summary);
+}
+
+/* Run fixed-configuration MLFQ algorithm through the dedicated algorithms module with scheduler-owned queue pointer. */
+moss_status_t scheduler_run_mlfq(
+    const scheduler_process *scheduler_process_definitions,
+    size_t scheduler_process_count,
+    scheduler_gantt_segment *output_gantt_segments,
+    size_t output_gantt_segments_capacity,
+    size_t *output_gantt_segment_count,
+    scheduler_process_metrics *output_process_metrics,
+    size_t output_process_metrics_capacity,
+    size_t *output_process_metrics_count,
+    scheduler_algorithm_summary *output_algorithm_summary) {
+    return scheduler_run_mlfq_with_ready_queue_pointer(
+        scheduler_process_definitions, scheduler_process_count, &ready_queue_process_identifiers, output_gantt_segments,
+        output_gantt_segments_capacity, output_gantt_segment_count, output_process_metrics, output_process_metrics_capacity,
+        output_process_metrics_count, output_algorithm_summary);
 }
