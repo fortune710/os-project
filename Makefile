@@ -1,32 +1,29 @@
-﻿CC ?= gcc
-CXX ?= g++
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Iinclude
-CXXFLAGS ?= -std=c++17 -Wall -Wextra -Wpedantic -Iinclude
-LDFLAGS ?=
+# Subsystem C: Synchronization & Protection
+# Standalone Makefile (Part I)
 
-SRC_C :=
-SRC_CPP := \
-  src/main.cpp \
-  src/sched/sched.cpp \
-  src/mem/mem.cpp \
-  src/sync/sync.cpp
+CXX      = g++
+CXXFLAGS = -Wall -Wextra -Wno-unused-parameter -std=c++17 -g -Iinclude
 
-OBJ_C := $(SRC_C:.c=.o)
-OBJ_CPP := $(SRC_CPP:.cpp=.o)
-OBJ := $(OBJ_C) $(OBJ_CPP)
+# Sync depends on sched for PCB role lookups
+SRC     = src/main.cpp src/sync.cpp src/sched.cpp
+TARGET  = sync_demo
 
-all: moss
+TEST_SRC    = tests/test_sync.cpp src/sync.cpp src/sched.cpp
+TEST_TARGET = test_sync
 
-moss: $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJ) $(LDFLAGS)
+.PHONY: all clean test
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+all: $(TARGET)
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(TARGET): $(SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 clean:
-	rm -f $(OBJ) moss
+	rm -f $(TARGET) $(TEST_TARGET)
 
-.PHONY: all clean
+test: $(TEST_TARGET)
+	@echo "Running Subsystem C tests..."
+	./$(TEST_TARGET)
+
+$(TEST_TARGET): $(TEST_SRC)
+	$(CXX) $(CXXFLAGS) -o $@ $^
