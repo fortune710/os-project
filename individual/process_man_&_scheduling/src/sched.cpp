@@ -50,6 +50,7 @@ int sched_init(void) {
     return MOSS_SUCCESS;
 }
 
+//create process and insert into process table if process 
 int sched_create_process(const char *name, int burst, int arrival,
                          int priority, UserRole role) {
     if (name == nullptr || burst <= 0 || arrival < 0) {
@@ -188,8 +189,8 @@ int sched_run_fcfs(void) {
         total_wait += p->waiting_time;
         total_turn += p->turnaround_time;
     }
-    avg_waiting_time = static_cast<int>(total_wait) / static_cast<int>(ready.size());
-    avg_turnaround_time = static_cast<int>(total_turn) / static_cast<int>(ready.size());
+    avg_waiting_time = total_wait / static_cast<int>(ready.size());
+    avg_turnaround_time = total_turn / static_cast<int>(ready.size());
 
     moss_log(LOG_INFO, "FCFS scheduling completed for %d processes",
              static_cast<int>(ready.size()));
@@ -342,8 +343,8 @@ int sched_run_rr(int quantum) {
         total_wait += p->waiting_time;
         total_turn += p->turnaround_time;
     }
-    avg_waiting_time = static_cast<int>(total_wait) / ready_count;
-    avg_turnaround_time = static_cast<int>(total_turn) / ready_count;
+    avg_waiting_time = total_wait / ready_count;
+    avg_turnaround_time = total_turn / ready_count;
 
     moss_log(LOG_INFO, "Round Robin (quantum=%d) scheduling completed for %d processes",
              quantum, ready_count);
@@ -453,8 +454,24 @@ void sched_print_stats(void) {
 }
 
 int sched_list_processes(void) {
-    /* TODO: Implement process listing */
-    std::printf("  (not yet implemented)\n");
+    std::printf("  %-6s %-16s %-12s %-8s %-8s %-10s %-8s\n",
+           "PID", "Name", "State", "Burst", "Arrival", "Remaining", "Role");
+    std::printf("  %-6s %-16s %-12s %-8s %-8s %-10s %-8s\n",
+           "---", "----", "-----", "-----", "-------", "---------", "----");
+    int found = 0;
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (process_table[i].active) {
+            PCB *p = &process_table[i];
+            std::printf("  %-6d %-16s %-12s %-8d %-8d %-10d %-8s\n",
+                   p->pid, p->name, proc_state_str(p->state),
+                   p->burst_time, p->arrival_time, p->remaining_time,
+                   role_str(p->role));
+            found++;
+        }
+    }
+    if (found == 0) {
+        std::printf("  (no active processes)\n");
+    }
     return MOSS_SUCCESS;
 }
 
