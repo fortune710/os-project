@@ -501,8 +501,13 @@ int sync_detect_deadlock(void) {
         if (has_cycle) {
             /* Report the cycle */
             std::printf("  DEADLOCK DETECTED!\n");
-            /* TODO: print the actual cycle of PIDs involved */
-            std::printf("  (cycle details not yet implemented)\n");
+            std::printf("  Cycle: ");
+            int node = slow;
+            do {
+                std::printf("PID %d -> ", node);
+                node = wait_for[node];
+            } while (node != slow);
+            std::printf("PID %d (cycle)\n", slow);
 
             moss_log(LOG_ERROR, "Deadlock detected in wait-for graph");
             return MOSS_ERR_DEADLOCK;
