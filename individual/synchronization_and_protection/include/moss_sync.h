@@ -85,17 +85,6 @@ int sync_sem_signal(int sem_id, int pid);
 int sync_run_producer_consumer(int buffer_size, int num_items);
 
 /*
- * sync_run_readers_writers - Simulate the Readers-Writers problem.
- * Demonstrates concurrent readers with exclusive writer access.
- * @num_readers: Number of reader processes (1–8).
- * @num_writers: Number of writer processes (1–4).
- * @num_ops:     Number of operations to simulate.
- * Returns: MOSS_SUCCESS on success.
- *          MOSS_ERR_INVALID if parameters out of range.
- */
-int sync_run_readers_writers(int num_readers, int num_writers, int num_ops);
-
-/*
  * sync_check_permission - Check if a process has permission for an action.
  * @pid:      Process ID.
  * @resource: Resource type ("memory", "process", "sync_resource").
