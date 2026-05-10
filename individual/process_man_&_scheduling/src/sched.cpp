@@ -50,6 +50,7 @@ int sched_init(void) {
     return MOSS_SUCCESS;
 }
 
+//create process and insert into process table if process 
 int sched_create_process(const char *name, int burst, int arrival,
                          int priority, UserRole role) {
     if (name == nullptr || burst <= 0 || arrival < 0) {
