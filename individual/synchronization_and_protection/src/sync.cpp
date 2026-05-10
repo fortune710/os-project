@@ -546,7 +546,24 @@ void sync_print_state(void) {
     }
 
     std::printf("\n  === Semaphore State ===\n");
-    std::printf("  (not yet implemented)\n");
+    std::printf("  %-6s %-16s %-10s %-10s\n",
+           "ID", "Name", "Value", "Waiters");
+    std::printf("  %-6s %-16s %-10s %-10s\n",
+           "--", "----", "-----", "-------");
+
+    int found_sem = 0;
+    for (int i = 0; i < MAX_SEMAPHORES; i++) {
+        if (semaphores[i].active) {
+            found_sem = 1;
+            std::printf("  %-6d %-16s %-10d %d\n",
+                   i, semaphores[i].name,
+                   semaphores[i].value,
+                   semaphores[i].wait_count);
+        }
+    }
+    if (!found_sem) {
+        std::printf("  (no semaphores created)\n");
+    }
 }
 
 void sync_cleanup(void) {
