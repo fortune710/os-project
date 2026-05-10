@@ -574,11 +574,13 @@ int sync_detect_deadlock(void) {
      * Then check for cycles using Floyd's tortoise and hare.
      */
 
-    /* Wait-for adjacency: wait_for[i] = PID that process i is waiting on, -1 if none */
+    /* Wait-for info: wait_on_res[i] = resource ID process i is waiting on */
     int wait_for[MAX_PROCESSES * 2];
+    int wait_on_res[MAX_PROCESSES * 2];
     int max_pid = 0;
 
     std::memset(wait_for, -1, sizeof(wait_for));
+    std::memset(wait_on_res, -1, sizeof(wait_on_res));
 
     /* Build wait-for edges from mutex state */
     for (int i = 0; i < MAX_RESOURCES; i++) {
@@ -591,6 +593,7 @@ int sync_detect_deadlock(void) {
             int waiter = mutexes[i].wait_queue[j];
             if (waiter >= 0 && waiter < MAX_PROCESSES * 2) {
                 wait_for[waiter] = owner;
+                wait_on_res[waiter] = i;
                 if (waiter > max_pid) max_pid = waiter;
             }
         }
@@ -625,13 +628,15 @@ int sync_detect_deadlock(void) {
         if (has_cycle) {
             /* Report the cycle */
             std::printf("  DEADLOCK DETECTED!\n");
-            std::printf("  Cycle: ");
+            std::printf("  Wait-for Cycle:\n");
             int node = slow;
             do {
-                std::printf("PID %d -> ", node);
-                node = wait_for[node];
+                int next = wait_for[node];
+                int res_id = wait_on_res[node];
+                std::printf("    PID %d is waiting for Mutex '%s' (ID %d) held by PID %d\n",
+                       node, mutexes[res_id].name, res_id, next);
+                node = next;
             } while (node != slow);
-            std::printf("PID %d (cycle)\n", slow);
 
             moss_log(LOG_ERROR, "Deadlock detected in wait-for graph");
             return MOSS_ERR_DEADLOCK;
@@ -662,7 +667,15 @@ void sync_print_state(void) {
             } else {
                 std::printf("%-10s ", "-");
             }
-            std::printf("%d\n", mutexes[i].wait_count);
+            std::printf("%d", mutexes[i].wait_count);
+            if (mutexes[i].wait_count > 0) {
+                std::printf(" [PIDs: ");
+                for (int j = 0; j < mutexes[i].wait_count; j++) {
+                    std::printf("%d%s", mutexes[i].wait_queue[j], (j == mutexes[i].wait_count - 1) ? "" : ",");
+                }
+                std::printf("]");
+            }
+            std::printf("\n");
         }
     }
     if (!found_mutex) {
@@ -679,10 +692,18 @@ void sync_print_state(void) {
     for (int i = 0; i < MAX_SEMAPHORES; i++) {
         if (semaphores[i].active) {
             found_sem = 1;
-            std::printf("  %-6d %-16s %-10d %d\n",
+            std::printf("  %-6d %-16s %-10d %d",
                    i, semaphores[i].name,
                    semaphores[i].value,
                    semaphores[i].wait_count);
+            if (semaphores[i].wait_count > 0) {
+                std::printf(" [PIDs: ");
+                for (int j = 0; j < semaphores[i].wait_count; j++) {
+                    std::printf("%d%s", semaphores[i].wait_queue[j], (j == semaphores[i].wait_count - 1) ? "" : ",");
+                }
+                std::printf("]");
+            }
+            std::printf("\n");
         }
     }
     if (!found_sem) {
